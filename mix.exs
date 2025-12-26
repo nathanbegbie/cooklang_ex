@@ -54,7 +54,7 @@ defmodule CooklangEx.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md", "LICENSE"]
     ]
   end
 end
