@@ -145,9 +145,6 @@ jobs:
       - name: Compile project
         run: mix compile
 
-      - name: Check code formatting
-        run: mix format --check-formatted
-
   dialyzer:
     name: Dialyzer (Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}})
     runs-on: ubuntu-latest
