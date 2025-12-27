@@ -1,7 +1,7 @@
 defmodule CooklangEx.MixProject do
   use Mix.Project
 
-  @version "0.0.1"
+  @version File.read!("VERSION") |> String.trim()
   @source_url "https://github.com/nathanbegbie/cooklang_ex"
 
   def project do
@@ -45,7 +45,7 @@ defmodule CooklangEx.MixProject do
   defp package do
     [
       name: "cooklang_ex",
-      files: ~w(lib native .formatter.exs mix.exs README.md LICENSE),
+      files: ~w(lib native .formatter.exs mix.exs README.md LICENSE VERSION),
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}
     ]

@@ -8,13 +8,48 @@ permissions:
   contents: write
 
 jobs:
+  update-version:
+    name: Update Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION=${TAG#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Update VERSION file
+        run: |
+          .github/scripts/update-version.sh "${{ steps.get_version.outputs.version }}"
+
+      - name: Commit and push version update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }}"
+          git push origin HEAD:main
+
   validate:
+    needs: update-version
     name: Validate Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Validate tag format
         run: |
@@ -65,17 +100,6 @@ jobs:
       - name: Check formatting
         run: mix format --check-formatted
 
-      - name: Validate version matches tag
-        run: |
-          VERSION=$(grep 'version:' mix.exs | sed -n 's/.*version: "\(.*\)".*/\1/p' | head -n1)
-          TAG=${{ github.event.release.tag_name }}
-          TAG=${TAG#v}
-          if [ "$VERSION" != "$TAG" ]; then
-            echo "Version mismatch: mix.exs has $VERSION but tag is $TAG"
-            exit 1
-          fi
-          echo "Version $VERSION matches tag $TAG"
-
   publish-hex:
     name: Publish to Hex.pm
     runs-on: ubuntu-latest
@@ -85,6 +109,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
@@ -124,6 +151,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1

@@ -210,6 +210,19 @@ Extensions include:
 See the [cooklang-rs extensions documentation](https://github.com/cooklang/cooklang-rs/blob/main/extensions.md)
 for details.
 
+## Release Process
+
+Creating a new release is simple - just create and publish a GitHub release with a version tag:
+
+1. **Create a new release** on GitHub with a version tag (e.g., `v0.1.0`)
+2. **Publish the release** - The CI workflow automatically:
+   - Updates the VERSION file
+   - Runs validation and tests
+   - Publishes to Hex.pm
+   - Publishes documentation to HexDocs
+
+The GitHub release tag is the source of truth for versioning. The VERSION file in the repository is automatically updated to match the release tag.
+
 ## Development
 
 ```bash
