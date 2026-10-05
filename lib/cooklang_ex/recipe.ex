@@ -8,8 +8,11 @@ defmodule CooklangEx.Recipe do
   - `cookware` - List of cookware marked with `#`
   - `timers` - List of timers marked with `~`
   - `steps` - List of cooking steps (paragraphs)
+  - `warnings` - Warning messages from the parser
+  - `diagnostics` - The same warnings as `CooklangEx.Diagnostic` structs, with positions
   """
 
+  alias CooklangEx.Diagnostic
   alias CooklangEx.Recipe.{Ingredient, Cookware, Timer, Step, Quantity}
 
   @type t :: %__MODULE__{
@@ -18,7 +21,8 @@ defmodule CooklangEx.Recipe do
           cookware: [Cookware.t()],
           timers: [Timer.t()],
           steps: [Step.t()],
-          warnings: [String.t()]
+          warnings: [String.t()],
+          diagnostics: [Diagnostic.t()]
         }
 
   defstruct metadata: %{},
@@ -26,7 +30,8 @@ defmodule CooklangEx.Recipe do
             cookware: [],
             timers: [],
             steps: [],
-            warnings: []
+            warnings: [],
+            diagnostics: []
 
   @doc false
   def from_json(json_string) when is_binary(json_string) do
@@ -42,7 +47,8 @@ defmodule CooklangEx.Recipe do
       cookware: parse_cookware(data["cookware"] || []),
       timers: parse_timers(data["timers"] || []),
       steps: parse_steps(data["sections"] || data["steps"] || []),
-      warnings: data["warnings"] || []
+      warnings: data["warnings"] || [],
+      diagnostics: Enum.map(data["diagnostics"] || [], &Diagnostic.from_map/1)
     }
   end
 

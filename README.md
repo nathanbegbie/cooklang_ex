@@ -12,7 +12,7 @@ Elixir bindings for the canonical [Cooklang](https://cooklang.org/) parser, powe
 - **Recipe scaling** - Automatically scale ingredient quantities to different serving sizes
 - **Extensions** - Optional syntax extensions for advanced recipe formatting
 - **Fast** - Native Rust performance via NIF bindings
-- **Rich errors** - Detailed parse error messages with source locations
+- **Rich errors** - Every parse error and warning, with its line, column, and byte offsets
 
 ## Installation
 
@@ -92,6 +92,31 @@ Add @yeast{1%packet} and @salt{1%tsp}.
 hd(scaled.ingredients).quantity.value
 # => 800.0 (was 400)
 ```
+
+## Handling Errors
+
+A failed parse returns a `CooklangEx.ParseError`. Its `diagnostics` list every error and warning that cooklang-rs reported, with their positions. You can show each problem next to the text that caused it:
+
+```elixir
+{:error, %CooklangEx.ParseError{} = error} = CooklangEx.parse("Add @flour{%g}.")
+
+error.message
+# => "Empty quantity value"
+
+[%CooklangEx.Diagnostic{severity: :error, labels: [label]}] = error.diagnostics
+{label.line, label.column, label.message}
+# => {1, 12, "add value here"}
+```
+
+A recipe that parses can still have warnings. They are in `recipe.diagnostics`, with the same positions:
+
+```elixir
+{:ok, recipe} = CooklangEx.parse("Wait ~{10}.")
+[%CooklangEx.Diagnostic{severity: :warning, message: message}] = recipe.diagnostics
+# message => "Invalid timer quantity: missing unit"
+```
+
+`parse!/2` and `parse_and_scale!/3` raise the `CooklangEx.ParseError`.
 
 ## Cooklang Syntax Reference
 

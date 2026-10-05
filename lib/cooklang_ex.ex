@@ -8,7 +8,7 @@ defmodule CooklangEx do
   - Parsing `.cook` recipe files
   - Recipe scaling (adjust servings)
   - Unit conversion
-  - Rich error messages
+  - Errors and warnings with their positions in the source
   - Optional Cooklang extensions
 
   ## Quick Start
@@ -50,6 +50,7 @@ defmodule CooklangEx do
   """
 
   alias CooklangEx.Native
+  alias CooklangEx.ParseError
   alias CooklangEx.Recipe
 
   @type parse_option ::
@@ -62,7 +63,7 @@ defmodule CooklangEx do
   @doc """
   Parse a Cooklang recipe string.
 
-  Returns `{:ok, recipe}` on success or `{:error, reason}` on failure.
+  Returns `{:ok, recipe}` on success or `{:error, %CooklangEx.ParseError{}}` on failure.
 
   ## Options
 
@@ -75,7 +76,7 @@ defmodule CooklangEx do
       iex> is_struct(recipe, CooklangEx.Recipe)
       true
   """
-  @spec parse(String.t(), [parse_option()]) :: {:ok, Recipe.t()} | {:error, String.t()}
+  @spec parse(String.t(), [parse_option()]) :: {:ok, Recipe.t()} | {:error, ParseError.t()}
   def parse(input, opts \\ []) when is_binary(input) do
     all_extensions = Keyword.get(opts, :all_extensions, true)
 
@@ -83,8 +84,8 @@ defmodule CooklangEx do
       {:ok, json} ->
         {:ok, Recipe.from_json(json)}
 
-      {:error, _} = error ->
-        error
+      {:error, json} ->
+        {:error, ParseError.from_json(json)}
     end
   end
 
@@ -97,7 +98,7 @@ defmodule CooklangEx do
   def parse!(input, opts \\ []) do
     case parse(input, opts) do
       {:ok, recipe} -> recipe
-      {:error, reason} -> raise ArgumentError, reason
+      {:error, %ParseError{} = error} -> raise error
     end
   end
 
@@ -117,7 +118,7 @@ defmodule CooklangEx do
       400.0
   """
   @spec parse_and_scale(String.t(), pos_integer(), [parse_option()]) ::
-          {:ok, Recipe.t()} | {:error, String.t()}
+          {:ok, Recipe.t()} | {:error, ParseError.t()}
   def parse_and_scale(input, target_servings, opts \\ [])
       when is_binary(input) and is_integer(target_servings) and target_servings > 0 do
     all_extensions = Keyword.get(opts, :all_extensions, true)
@@ -126,8 +127,8 @@ defmodule CooklangEx do
       {:ok, json} ->
         {:ok, Recipe.from_json(json)}
 
-      {:error, _} = error ->
-        error
+      {:error, json} ->
+        {:error, ParseError.from_json(json)}
     end
   end
 
@@ -140,7 +141,7 @@ defmodule CooklangEx do
   def parse_and_scale!(input, target_servings, opts \\ []) do
     case parse_and_scale(input, target_servings, opts) do
       {:ok, recipe} -> recipe
-      {:error, reason} -> raise ArgumentError, reason
+      {:error, %ParseError{} = error} -> raise error
     end
   end
 
@@ -155,15 +156,15 @@ defmodule CooklangEx do
       iex> Enum.map(ingredients, & &1.name)
       ["eggs", "milk"]
   """
-  @spec ingredients(String.t()) :: {:ok, [Recipe.Ingredient.t()]} | {:error, String.t()}
+  @spec ingredients(String.t()) :: {:ok, [Recipe.Ingredient.t()]} | {:error, ParseError.t()}
   def ingredients(input) when is_binary(input) do
     case Native.parse(input, true) do
       {:ok, json} ->
         recipe = Recipe.from_json(json)
         {:ok, recipe.ingredients}
 
-      {:error, _} = error ->
-        error
+      {:error, json} ->
+        {:error, ParseError.from_json(json)}
     end
   end
 
@@ -176,15 +177,15 @@ defmodule CooklangEx do
       iex> Enum.map(cookware, & &1.name)
       ["pan", "bowl"]
   """
-  @spec cookware(String.t()) :: {:ok, [Recipe.Cookware.t()]} | {:error, String.t()}
+  @spec cookware(String.t()) :: {:ok, [Recipe.Cookware.t()]} | {:error, ParseError.t()}
   def cookware(input) when is_binary(input) do
     case Native.parse(input, true) do
       {:ok, json} ->
         recipe = Recipe.from_json(json)
         {:ok, recipe.cookware}
 
-      {:error, _} = error ->
-        error
+      {:error, json} ->
+        {:error, ParseError.from_json(json)}
     end
   end
 
@@ -202,15 +203,15 @@ defmodule CooklangEx do
       iex> metadata["servings"]
       "4"
   """
-  @spec metadata(String.t()) :: {:ok, map()} | {:error, String.t()}
+  @spec metadata(String.t()) :: {:ok, map()} | {:error, ParseError.t()}
   def metadata(input) when is_binary(input) do
     case Native.parse(input, true) do
       {:ok, json} ->
         recipe = Recipe.from_json(json)
         {:ok, recipe.metadata}
 
-      {:error, _} = error ->
-        error
+      {:error, json} ->
+        {:error, ParseError.from_json(json)}
     end
   end
 

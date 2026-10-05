@@ -394,26 +394,33 @@ defmodule CooklangExEdgeCasesTest do
 
   describe "error message validation" do
     test "error messages are descriptive strings when errors occur" do
-      # Try to scale without servings metadata
+      # Scaling needs servings metadata. The error is not in the report of
+      # cooklang-rs, so it has no diagnostics.
       recipe_text = "Add @flour{200%g}."
 
-      case CooklangEx.parse_and_scale(recipe_text, 4) do
-        {:ok, _} ->
-          # Might succeed with default servings
-          :ok
+      assert {:error, %CooklangEx.ParseError{message: message, diagnostics: []}} =
+               CooklangEx.parse_and_scale(recipe_text, 4)
 
-        {:error, reason} ->
-          assert is_binary(reason)
-          assert String.length(reason) > 0
-      end
+      assert message ==
+               "Scaling error: Cannot scale recipe: servings metadata is not a valid number"
     end
 
-    test "parse! raises ArgumentError with message" do
-      # Since cooklang-rs is permissive, we can't easily trigger a parse error
-      # But we can test that parse! returns a recipe or raises properly
-      recipe_text = "Add @salt{}."
-      recipe = CooklangEx.parse!(recipe_text)
-      assert %CooklangEx.Recipe{} = recipe
+    test "parse! raises ParseError with message" do
+      # Two errors: the message joins both, and the error keeps both diagnostics.
+      recipe_text = "Add @flour{%g}.\nAdd @eggs{99999999999/2}.\n"
+
+      error =
+        assert_raise CooklangEx.ParseError, fn ->
+          CooklangEx.parse!(recipe_text)
+        end
+
+      assert Exception.message(error) ==
+               "Empty quantity value\nError parsing integer number"
+
+      assert [
+               %CooklangEx.Diagnostic{message: "Empty quantity value"},
+               %CooklangEx.Diagnostic{message: "Error parsing integer number"}
+             ] = error.diagnostics
     end
   end
 end
