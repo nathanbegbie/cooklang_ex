@@ -88,17 +88,26 @@ defmodule CooklangEx.Recipe.Quantity do
   Represents a quantity with an optional value and unit.
 
   Examples:
-  - `@eggs{3}` -> value: 3, unit: nil
-  - `@flour{200%g}` -> value: 200, unit: "g"
-  - `@salt{}` -> value: nil, unit: nil (some amount)
+  - `@eggs{3}` -> value: 3, unit: nil, scalable: true
+  - `@flour{200%g}` -> value: 200, unit: "g", scalable: true
+  - `@salt{=1%tsp}` -> value: 1, unit: "tsp", scalable: false
   """
+
+  @typedoc """
+  Whether the quantity changes when the recipe scales to other servings.
+
+  Ingredient quantities scale unless they are fixed with `=`, for example
+  `@salt{=1%tsp}`. Cookware and timer quantities never scale.
+  """
+  @type scalable :: boolean()
 
   @type t :: %__MODULE__{
           value: number() | String.t() | nil,
-          unit: String.t() | nil
+          unit: String.t() | nil,
+          scalable: scalable()
         }
 
-  defstruct value: nil, unit: nil
+  defstruct value: nil, unit: nil, scalable: false
 
   @doc false
   def from_map(nil), do: nil
@@ -115,7 +124,8 @@ defmodule CooklangEx.Recipe.Quantity do
 
     %__MODULE__{
       value: value,
-      unit: data["unit"]
+      unit: data["unit"],
+      scalable: data["scalable"] == true
     }
   end
 end
@@ -126,6 +136,7 @@ defmodule CooklangEx.Recipe.Ingredient do
 
   Ingredients are marked with `@` in Cooklang:
   - `@salt` - just the name
+  - `@salt{}` - no quantity (`quantity: nil`), the same as `@salt`
   - `@eggs{3}` - with quantity
   - `@flour{200%g}` - with quantity and unit
   - `@ground black pepper{}` - multi-word name

@@ -89,6 +89,37 @@ defmodule CooklangExTest do
     end
   end
 
+  describe "parse/2 quantity scalability" do
+    test "marks ingredient quantities as scalable and `=` quantities as fixed" do
+      assert {:ok, recipe} = CooklangEx.parse("Mix @flour{500%g} with @salt{=1%tsp}.")
+
+      flour = Enum.find(recipe.ingredients, &(&1.name == "flour"))
+      salt = Enum.find(recipe.ingredients, &(&1.name == "salt"))
+
+      assert flour.quantity.scalable == true
+      assert salt.quantity.scalable == false
+    end
+
+    test "marks ingredient ranges as scalable and cookware and timer quantities as fixed" do
+      assert {:ok, recipe} = CooklangEx.parse("Beat @eggs{2-4} in #bowls{2} for ~{3%minutes}.")
+
+      assert hd(recipe.ingredients).quantity.scalable == true
+      assert hd(recipe.cookware).quantity.scalable == false
+      assert hd(recipe.timers).quantity.scalable == false
+    end
+  end
+
+  describe "parse/2 missing quantities" do
+    test "returns no quantity for empty braces, the same as for no braces" do
+      assert {:ok, recipe} = CooklangEx.parse("Add @salt{}, @pepper and use a #pan{}.")
+
+      assert [%{name: "salt", quantity: nil}, %{name: "pepper", quantity: nil}] =
+               recipe.ingredients
+
+      assert [%{name: "pan", quantity: nil}] = recipe.cookware
+    end
+  end
+
   describe "parse_and_scale/2" do
     test "scales ingredient quantities" do
       recipe_text = """

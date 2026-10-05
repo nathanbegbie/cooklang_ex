@@ -57,6 +57,7 @@ struct QuantityOutput {
     value: Option<ValueOutput>,
     #[serde(skip_serializing_if = "Option::is_none")]
     unit: Option<String>,
+    scalable: bool,
 }
 
 #[derive(Serialize)]
@@ -273,6 +274,7 @@ fn convert_quantity(q: &cooklang::Quantity) -> QuantityOutput {
     QuantityOutput {
         value,
         unit: q.unit().map(|s| s.to_string()),
+        scalable: q.scalable(),
     }
 }
 
