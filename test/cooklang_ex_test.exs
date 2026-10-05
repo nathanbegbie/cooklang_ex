@@ -89,6 +89,14 @@ defmodule CooklangExTest do
     end
   end
 
+  describe "parse/2 ranges" do
+    test "returns a range quantity as a {start, end} tuple" do
+      assert {:ok, recipe} = CooklangEx.parse("Beat @eggs{2-4}.")
+
+      assert hd(recipe.ingredients).quantity.value == {2.0, 4.0}
+    end
+  end
+
   describe "parse_and_scale/2" do
     test "scales ingredient quantities" do
       recipe_text = """

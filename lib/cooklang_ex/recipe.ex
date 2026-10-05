@@ -90,11 +90,15 @@ defmodule CooklangEx.Recipe.Quantity do
   Examples:
   - `@eggs{3}` -> value: 3, unit: nil
   - `@flour{200%g}` -> value: 200, unit: "g"
+  - `@eggs{2-4}` -> value: {2, 4}, unit: nil
   - `@salt{}` -> value: nil, unit: nil (some amount)
   """
 
+  @typedoc "A range quantity, for example `@eggs{2-4}`."
+  @type range :: {low :: number(), high :: number()}
+
   @type t :: %__MODULE__{
-          value: number() | String.t() | nil,
+          value: number() | range() | String.t() | nil,
           unit: String.t() | nil
         }
 
@@ -107,7 +111,7 @@ defmodule CooklangEx.Recipe.Quantity do
     value =
       case data["value"] do
         %{"Number" => n} -> n
-        %{"Range" => %{"start" => s, "end" => e}} -> {s, e}
+        %{"start" => s, "end" => e} -> {s, e}
         %{"Text" => t} -> t
         n when is_number(n) -> n
         other -> other
